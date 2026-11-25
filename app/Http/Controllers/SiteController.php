@@ -95,7 +95,7 @@ class SiteController extends Controller
     /** @param  UploadedFile[]  $files */
     private function addSources(Site $site, string $links, array $files, ?string $note): void
     {
-        foreach (preg_split('/[\s,]+/', $links) as $url) {
+        foreach (preg_split('/\s+/', $links) as $url) {
             $url = trim($url);
             if ($url === '') {
                 continue;
