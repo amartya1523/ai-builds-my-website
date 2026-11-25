@@ -185,7 +185,8 @@ class BuildPipeline
                 }
             }
             $site->update(['ai_status' => 'ok', 'ai_error' => count($result['dropped']) ? count($result['dropped']).' AI fact(s) dropped: not found in the cited source.' : null]);
-        } catch (AiUnavailableException $e) {
+        } catch (\Throwable $e) {
+            report($e);
             $site->update(['ai_status' => 'fallback', 'ai_error' => 'AI unavailable while reading sources: '.$e->getMessage().' Only directly readable details (phones, emails, links, structured data) were used. You can retry.']);
         }
     }

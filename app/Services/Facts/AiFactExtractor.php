@@ -71,6 +71,11 @@ TXT;
         $dropped = [];
 
         foreach ((array) ($reply['facts'] ?? []) as $fact) {
+            if (! is_array($fact)) {
+                $dropped[] = ['value' => (string) json_encode($fact), 'reason' => 'malformed item'];
+
+                continue;
+            }
             $field = (string) ($fact['field'] ?? '');
             $value = trim((string) ($fact['value'] ?? ''));
             $quote = trim((string) ($fact['quote'] ?? ''));
@@ -120,6 +125,9 @@ TXT;
         $kept = [];
         $dropped = [];
         foreach ((array) ($reply['items'] ?? []) as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
             $value = trim((string) ($item['name'] ?? '')).' — '.trim((string) ($item['price'] ?? ''));
             $quote = (string) ($item['quote'] ?? '');
             if (trim((string) ($item['name'] ?? '')) === '' || ! $this->grounded('price_item', $value, $quote, (string) $source->content)) {

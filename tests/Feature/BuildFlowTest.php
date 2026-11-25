@@ -171,4 +171,13 @@ class BuildFlowTest extends TestCase
         $this->put("/sites/{$site->slug}/sections/{$hero->id}", ['content' => ['headline' => 'Draft only']]);
         $this->get("/s/{$site->slug}")->assertDontSee('Draft only');
     }
+
+    public function test_malformed_ai_reply_does_not_break_the_build(): void
+    {
+        $this->fakeWeb(ai: ['facts' => ['just a string', ['field' => 'service', 'value' => 'Custom cakes', 'source_id' => 1, 'quote' => 'Custom cakes and cookies.']]]);
+
+        $this->post('/sites', ['business_name' => 'Rosy Bakes', 'city' => 'Pune', 'links' => 'https://example-bakery.test/'])->assertRedirect();
+
+        $this->assertContains('Custom cakes', Site::first()->acceptedFacts()['service'] ?? []);
+    }
 }
