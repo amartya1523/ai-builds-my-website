@@ -167,6 +167,16 @@ class BuildPipeline
 
         try {
             $result = $this->extractor->extract($site, $sources->where('status', 'ok')->where('kind', '!=', 'directory')->values());
+            foreach ($sources->where('status', 'ok') as $source) {
+                if (in_array($source->kind, ['file', 'website', 'owner_note'], true) && AiFactExtractor::looksLikePriceList((string) $source->content)) {
+                    $prices = $this->extractor->extractPrices($site, $source);
+                    $result['facts'] = array_merge(
+                        array_values(array_filter($result['facts'], fn ($f) => ! ($f['field'] === 'price_item' && $f['source_id'] === $source->id))),
+                        $prices['facts']
+                    );
+                    $result['dropped'] = array_merge($result['dropped'], $prices['dropped']);
+                }
+            }
             foreach ($result['facts'] as $f) {
                 $exists = $site->facts()->where('field', $f['field'])->where('source_id', $f['source_id'])->get()
                     ->contains(fn ($e) => \App\Services\Facts\Normalize::key($f['field'], $e->value) === \App\Services\Facts\Normalize::key($f['field'], $f['value']));
