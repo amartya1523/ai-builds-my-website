@@ -28,7 +28,7 @@ final class Normalize
     /** Human display format for Indian numbers, leaves anything else as typed. */
     public static function phone(string $value): string
     {
-        $ext = preg_match('/(?:ext\.?|extn\.?|x)\s*(\d{1,4})\s*$/i', $value, $m) ? ' (ext. '.$m[1].')' : '';
+        $ext = preg_match('/\(?\s*(?:ext\.?|extn\.?|x)\s*(\d{1,4})\s*\)?\s*$/i', $value, $m) ? ' (ext. '.$m[1].')' : '';
         $digits = preg_replace('/\D/', '', self::withoutExtension($value));
         if (strlen($digits) === 12 && str_starts_with($digits, '91')) {
             $digits = substr($digits, 2);
@@ -53,7 +53,7 @@ final class Normalize
 
     private static function withoutExtension(string $value): string
     {
-        return preg_replace('/(?:ext\.?|extn\.?|x)\s*\d{1,4}\s*$/i', '', $value);
+        return preg_replace('/\(?\s*(?:ext\.?|extn\.?|x)\s*\d{1,4}\s*\)?\s*$/i', '', $value);
     }
 
     /** Lower-case, no punctuation, single spaces: used for "is this quote really in the source?" */

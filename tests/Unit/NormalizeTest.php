@@ -25,5 +25,6 @@ class NormalizeTest extends TestCase
     {
         $this->assertSame(Normalize::phoneKey('+91 22 4939-4999'), Normalize::phoneKey('+91 22 4939-4999 ext. 2'));
         $this->assertSame('+91 22 4939 4999 (ext. 2)', Normalize::phone('+91 22 4939-4999 ext. 2'));
+        $this->assertSame(Normalize::phoneKey('+91 22 4939 4999'), Normalize::phoneKey('+91 22 4939 4999 (ext. 1)'));
     }
 }
