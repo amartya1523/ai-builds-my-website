@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Fact extends Model
 {
     /** Fields where a business normally has one value, so two different values are a conflict. */
-    public const SINGLE_VALUED = ['phone', 'email', 'address', 'hours', 'tagline', 'founded'];
+    public const SINGLE_VALUED = ['phone', 'email', 'address', 'hours', 'founded'];
 
     protected $fillable = ['site_id', 'source_id', 'field', 'value', 'evidence', 'status', 'origin'];
 
