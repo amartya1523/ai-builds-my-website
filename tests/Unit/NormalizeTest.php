@@ -18,5 +18,12 @@ class NormalizeTest extends TestCase
     public function test_landline_with_std_code(): void
     {
         $this->assertSame('+91 141 2565599', Normalize::phone('0141-2565599'));
+        $this->assertSame('+91 22 4939 4999', Normalize::phone('022-49394999'));
+    }
+
+    public function test_extension_does_not_make_a_different_number(): void
+    {
+        $this->assertSame(Normalize::phoneKey('+91 22 4939-4999'), Normalize::phoneKey('+91 22 4939-4999 ext. 2'));
+        $this->assertSame('+91 22 4939 4999 (ext. 2)', Normalize::phone('+91 22 4939-4999 ext. 2'));
     }
 }

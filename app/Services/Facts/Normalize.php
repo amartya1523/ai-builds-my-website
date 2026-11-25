@@ -17,7 +17,7 @@ final class Normalize
 
     public static function phoneKey(string $value): string
     {
-        $digits = preg_replace('/\D/', '', $value);
+        $digits = preg_replace('/\D/', '', self::withoutExtension($value));
         if (strlen($digits) > 10 && str_starts_with($digits, '91')) {
             $digits = substr($digits, 2);
         }
@@ -28,7 +28,8 @@ final class Normalize
     /** Human display format for Indian numbers, leaves anything else as typed. */
     public static function phone(string $value): string
     {
-        $digits = preg_replace('/\D/', '', $value);
+        $ext = preg_match('/(?:ext\.?|extn\.?|x)\s*(\d{1,4})\s*$/i', $value, $m) ? ' (ext. '.$m[1].')' : '';
+        $digits = preg_replace('/\D/', '', self::withoutExtension($value));
         if (strlen($digits) === 12 && str_starts_with($digits, '91')) {
             $digits = substr($digits, 2);
         }
@@ -36,12 +37,23 @@ final class Normalize
             $digits = substr($digits, 1);
         }
         if (strlen($digits) === 10) {
-            return preg_match('/^[6-9]/', $digits)
-                ? '+91 '.substr($digits, 0, 5).' '.substr($digits, 5)
-                : '+91 '.substr($digits, 0, 3).' '.substr($digits, 3);
+            if (preg_match('/^[6-9]/', $digits)) {
+                return '+91 '.substr($digits, 0, 5).' '.substr($digits, 5).$ext;
+            }
+            // Metro STD codes are two digits (Mumbai 22, Delhi 11, …); most others are three.
+            if (in_array(substr($digits, 0, 2), ['11', '20', '22', '33', '40', '44', '79', '80'], true)) {
+                return '+91 '.substr($digits, 0, 2).' '.substr($digits, 2, 4).' '.substr($digits, 6).$ext;
+            }
+
+            return '+91 '.substr($digits, 0, 3).' '.substr($digits, 3).$ext;
         }
 
         return trim($value);
+    }
+
+    private static function withoutExtension(string $value): string
+    {
+        return preg_replace('/(?:ext\.?|extn\.?|x)\s*\d{1,4}\s*$/i', '', $value);
     }
 
     /** Lower-case, no punctuation, single spaces: used for "is this quote really in the source?" */
