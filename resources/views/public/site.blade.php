@@ -51,6 +51,7 @@ nav.top .wrap{display:flex;align-items:center;justify-content:space-between;heig
 h1{font-family:Fraunces,Georgia,serif;font-size:clamp(38px,6vw,68px);line-height:1.04;margin:14px 0 18px;max-width:14ch;letter-spacing:-.01em}
 .lead{font-size:clamp(17px,2vw,20px);max-width:56ch;color:var(--muted);margin:0 0 30px}
 .hero.has-img .lead{color:#eee}
+.hero.has-img .btn.ghost{color:#fff;border-color:rgba(255,255,255,.6)}
 .cta{display:flex;gap:12px;flex-wrap:wrap}
 section.block{padding:80px 0;border-top:1px solid var(--line)}
 h2{font-family:Fraunces,Georgia,serif;font-size:clamp(28px,3.4vw,40px);margin:0 0 24px;line-height:1.15}
