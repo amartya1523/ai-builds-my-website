@@ -1,58 +1,122 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# AI Builds My Website
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel + MySQL app that turns what a small business owner already has (name, city, website, social links,
+Google Maps listing, PDFs, price lists, photos) into a ready-to-publish website, **without inventing a single fact**.
 
-## About Laravel
+> **Demo video (5 min, two real Mumbai businesses — Cafe Madras and Swati Snacks):** __VIDEO_LINK__
+>
+> Design notes, trade-offs and what's next: [DECISIONS.md](DECISIONS.md)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+![Published site for Swati Snacks](docs/screenshots/published-swati.jpg)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## What it does
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. **Reads everything the owner shares**
+   - Files: PDF (brochures, menus), CSV/TSV/TXT price lists, HTML, photos (used in the hero and gallery).
+   - Links: the website **plus its contact / about / menu pages**, social profiles, Google Maps links.
+   - The web: OpenStreetMap (real places with the same name) and DuckDuckGo results (hints only).
+2. **Extracts facts with proof.** Phones, emails, links and schema.org data are parsed without AI. The AI
+   (Groq `openai/gpt-oss-120b`) extracts the rest, and every AI fact must quote its source. Quotes that are not
+   really in the source are dropped. Menus get a separate pass so long price lists are copied in full.
+3. **Asks instead of guessing.** Conflicts and doubts become questions for the owner, and the site is not written
+   until the blocking ones are answered.
+4. **Writes the site** from confirmed facts only, then a claim guard removes any AI sentence with numbers, years,
+   contact details or boasts ("best", "award-winning", "since…") that no fact supports.
+5. **Edit, regenerate, publish.** Edit any section, regenerate one section with a style hint, hide/reorder
+   sections, preview, then publish a snapshot to a public URL `/s/{slug}`. Everything is stored in MySQL.
 
-## Learning Laravel
+![Builder workspace](docs/screenshots/workspace.jpg)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Edge cases handled
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| Case | What happens |
+|---|---|
+| **Several businesses with the same name** | OpenStreetMap is searched for the name in the city. If places match, the owner must pick one (or "none of these"); only the chosen listing's address/phone/hours are used, and its coordinates drive the map. *Demo: two "Cafe Madras" places in Mumbai.* |
+| **Sources that disagree** (two phone numbers, several addresses, different hours) | Values are normalised first (`+91 22 4939-4999 ext. 1` = `022 49394999`). Real differences become a blocking question listing every value with its sources. The owner can also type a different value. *Demo: Swati Snacks' 4 outlets.* |
+| **Social sites that block scraping** | Login walls / 403 / 429 are detected. The source is marked *blocked* with a plain-English next step ("paste your bio as a note"), any public preview is kept, and the link still goes on the site. Google Maps: the place name and coordinates are read from the URL itself. |
+| **Instructions hidden in uploaded files** | Regex rules + Llama Prompt Guard 2 (Groq) scan every file, page and hidden HTML element (`display:none`, `aria-hidden`, zero font size). Flagged lines are removed **before** the text reaches the model and shown to the owner under "What we ignored". Prompts also mark sources as untrusted data. |
+| **AI is down / rate-limited / returns junk** | Timeouts, retries, `Retry-After` on HTTP 429, and an `ai_calls` audit log. If it still fails, parsed facts are kept, a template writer builds plain but correct copy, the UI says "AI unavailable · template copy", and Regenerate retries later. Malformed AI items are skipped. |
+| **Web results about someone else** | Search results are a low-trust source: nothing from them is used unless the owner confirms it. |
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Tech
 
-## Agentic Development
+- **Laravel 13** (PHP 8.4), **MySQL 8.4**, Blade + plain CSS (no JS build step)
+- **AI:** Groq — `openai/gpt-oss-120b` (facts + copy), `openai/gpt-oss-20b` (price lists),
+  `meta-llama/llama-prompt-guard-2-86m` (injection). Gemini is supported with `AI_PROVIDER=gemini`;
+  `AI_PROVIDER=none` runs with no AI at all.
+- `smalot/pdfparser` for PDFs, OpenStreetMap Nominatim for places, DuckDuckGo HTML for web search (no keys needed)
+- **No API keys in the repo** — `.env` is git-ignored; see the sample [.env.example](.env.example)
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Run it
+
+### Option A — Docker (recommended, nothing to install but Docker)
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/amartya1523/ai-builds-my-website.git
+cd ai-builds-my-website
+cp .env.example .env          # then paste your free Groq key into GROQ_API_KEY
+docker compose up --build
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Open http://localhost:8000. On first start the container installs Composer packages, generates the app key,
+waits for MySQL, runs migrations and links storage.
 
-## Contributing
+### Option B — PHP on your machine
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Requires PHP 8.3+ (pdo_mysql, mbstring, zip), Composer and MySQL 8.
 
-## Code of Conduct
+```bash
+composer install
+cp .env.example .env          # set DB_HOST=127.0.0.1, your DB credentials and GROQ_API_KEY
+php artisan key:generate
+php artisan migrate
+php artisan storage:link
+php artisan serve
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Get a free AI key
 
-## Security Vulnerabilities
+- Groq: https://console.groq.com/keys → `GROQ_API_KEY`
+- or Gemini: https://aistudio.google.com/apikey → `GEMINI_API_KEY` and `AI_PROVIDER=gemini`
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Tests
 
-## License
+```bash
+docker compose exec app php artisan test     # or: php artisan test
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+13 tests (SQLite in memory, HTTP faked) cover: phone conflict → question → owner answer → site written;
+blocked Instagram; hidden instructions removed; AI down → template fallback; same-name businesses; AI facts
+without a real quote dropped; malformed AI replies; edit → regenerate → publish → later edits stay private;
+claim guard; phone normalisation.
+
+## How it works
+
+```
+owner input ─► sources (files, pages + sub-pages, social, maps, web search)
+                 │  injection guard (rules + Prompt Guard) removes hidden instructions
+                 ▼
+               facts  ◄── parser (tel:, mailto:, schema.org, regex)  +  AI extraction with verified quotes
+                 │
+                 ▼
+          FactResolver ──► questions (same-name place, conflicts, confirm web hints, missing contact)
+                 │                     ▲ owner answers
+                 ▼
+          SiteWriter: contact/prices/hours copied from facts · headline/about/services by AI → ClaimGuard
+                 │                     (template writer if the AI is unavailable)
+                 ▼
+          sections (MySQL JSON) ─► edit · regenerate · reorder · hide ─► Publish snapshot ─► /s/{slug}
+```
+
+| Path | Responsibility |
+|---|---|
+| `app/Services/Ingest` | `FileReader`, `LinkReader` (+ same-site sub-pages, blocked detection), `HtmlExtractor`, `WebSearch`, `InjectionGuard` |
+| `app/Services/Facts` | `ParserFacts`, `AiFactExtractor` (grounding check), `FactResolver`, `QuestionService`, `Normalize` |
+| `app/Services/Build` | `BuildPipeline`, `SiteWriter`, `ClaimGuard`, `Publisher` |
+| `app/Services/Ai` | `AiClient` interface, Groq/OpenAI-compatible, Gemini and null clients, retries + `ai_calls` log |
+| `database/migrations` | `sites`, `sources`, `facts`, `questions`, `sections`, `ai_calls` |
+| `resources/views` | builder UI and the published site template |
+
+## Author
+
+**Amartya Vikram Singh** — [github.com/amartya1523](https://github.com/amartya1523) · [amartyasingh.space](https://www.amartyasingh.space)

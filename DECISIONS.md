@@ -27,7 +27,10 @@ the business wrote them.
 
 | Decision | Why |
 |---|---|
-| **Laravel 12 + MySQL, Blade, no JS build step** | The brief asks for Laravel + MySQL. Server-rendered Blade keeps the whole flow testable with feature tests and the project runs with `composer install` only — no Node toolchain. |
+| **Laravel 13 + MySQL 8.4, Blade, no JS build step, Docker Compose** | The brief asks for Laravel + MySQL. Server-rendered Blade keeps the whole flow testable with feature tests and the project runs with `composer install` only — no Node toolchain. |
+| **Read the website's own sub-pages** | Owners paste their homepage, but phones and addresses usually live on "Contact" or "Menu". The reader follows up to 4 same-site links that look like contact/about/menu/price pages. |
+| **Separate pass for menus and price lists** | In one combined prompt the model returned only a handful of prices. Sources with 5+ prices get their own extraction call (on the smaller `gpt-oss-20b`, which has its own rate limit) and the same quote check. Prices are then copied verbatim, never written by the AI. |
+| **Built for free-tier limits** | Groq's free tier allows ~8k tokens/minute per model. Prompts share a character budget across sources (owner sources first, web search a small slice), `gpt-oss` runs with low reasoning effort, and HTTP 429 is retried after the provider's `Retry-After`. |
 | **Synchronous pipeline** | One build takes 15–60 s. A queue + polling UI adds moving parts for little gain at demo scale. The pipeline is a single service (`BuildPipeline`) so moving it to a queued job is a one-line change. |
 | **Groq (`openai/gpt-oss-120b`) by default, Gemini supported** | Free tier, fast, supports JSON mode. The provider is behind an `AiClient` interface; `AI_PROVIDER=gemini` switches to Gemini, `AI_PROVIDER=none` runs with no AI at all. |
 | **Two-layer prompt-injection defence** | Uploaded files are untrusted. A regex layer catches the common patterns even when the AI is down; Llama Prompt Guard 2 (on Groq) scores the rest. Flagged lines are removed **before** any text reaches the main model and shown to the owner. Hidden HTML text (`display:none`, `aria-hidden`, zero font size) is scanned too, as that is where page-level injections hide. Prompts also wrap sources in `<source>` tags and say they are data. |
