@@ -17,10 +17,6 @@ services:
 
   app:
     build: .
-    env_file: .env
-    environment:
-      DB_HOST: mysql
-      DB_PORT: 3306
     ports:
       - "8000:8000"
     volumes:
