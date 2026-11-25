@@ -3,11 +3,13 @@
 A Laravel + MySQL app that turns what a small business owner already has (name, city, website, social links,
 Google Maps listing, PDFs, price lists, photos) into a ready-to-publish website, **without inventing a single fact**.
 
-> **Demo video (5 min, two real Mumbai businesses — Cafe Madras and Swati Snacks):** __VIDEO_LINK__
+> **Demo video (5 min, two real Mumbai businesses — Cafe Madras and Swati Snacks):** **[Watch on Google Drive](https://drive.google.com/file/d/1hZxl-tyK3kyHspAf9r3gFbu78Howx_BO/view)**
 >
 > Design notes, trade-offs and what's next: [DECISIONS.md](DECISIONS.md)
 
-![Published site for Swati Snacks](docs/screenshots/published-swati.jpg)
+| Swati Snacks (published) | Cafe Madras (published) |
+|---|---|
+| ![Published site for Swati Snacks](docs/screenshots/published-swati.jpg) | ![Published site for Cafe Madras](docs/screenshots/published-cafe-madras.jpg) |
 
 ## What it does
 
@@ -26,6 +28,8 @@ Google Maps listing, PDFs, price lists, photos) into a ready-to-publish website,
    sections, preview, then publish a snapshot to a public URL `/s/{slug}`. Everything is stored in MySQL.
 
 ![Builder workspace](docs/screenshots/workspace.jpg)
+
+*The builder right after the "AI is down" test: sources with their status (Instagram blocked, hidden instructions removed from `swati-owner-notes.txt`), and sections labelled by who wrote them.*
 
 ## Edge cases handled
 
