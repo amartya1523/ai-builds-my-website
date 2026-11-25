@@ -26,7 +26,7 @@ class GeminiClient implements AiClient
         return filled($this->key);
     }
 
-    public function json(string $system, string $user): array
+    public function json(string $system, string $user, bool $fast = false): array
     {
         if (! $this->configured()) {
             throw new AiUnavailableException('No API key configured.');
@@ -46,6 +46,9 @@ class GeminiClient implements AiClient
             throw new AiUnavailableException('Could not reach Gemini: '.$e->getMessage());
         }
 
+        if ($response->status() === 429) {
+            throw new RateLimited('Gemini rate limit reached.', 20);
+        }
         if (! $response->successful()) {
             throw new AiUnavailableException('Gemini returned HTTP '.$response->status().'.');
         }

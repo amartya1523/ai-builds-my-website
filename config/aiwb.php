@@ -16,6 +16,8 @@ return [
         'key' => env('GROQ_API_KEY'),
         'base_url' => env('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
         'model' => env('GROQ_MODEL', 'openai/gpt-oss-120b'),
+        // Smaller model with its own rate limit, used for long price lists.
+        'fast_model' => env('GROQ_FAST_MODEL', 'openai/gpt-oss-20b'),
         // Small classifier model used to score uploaded text for prompt injection.
         'guard_model' => env('GROQ_GUARD_MODEL', 'meta-llama/llama-prompt-guard-2-86m'),
     ],
@@ -41,6 +43,9 @@ return [
 
     // Max characters of text we keep per source (keeps prompts small).
     'max_source_chars' => 12000,
+
+    // Total characters of source text sent in one extraction prompt (free tiers allow ~8k tokens/minute).
+    'prompt_char_budget' => (int) env('AI_PROMPT_CHAR_BUDGET', 16000),
 
     // Score above which a chunk of uploaded text is treated as an injection attempt.
     'injection_threshold' => 0.8,

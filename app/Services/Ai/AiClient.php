@@ -11,11 +11,11 @@ interface AiClient
     public function configured(): bool;
 
     /**
-     * Ask the model for a JSON object.
+     * Ask the model for a JSON object. $fast = use the provider's smaller model (separate rate limit).
      *
      * @throws AiUnavailableException
      */
-    public function json(string $system, string $user): array;
+    public function json(string $system, string $user, bool $fast = false): array;
 
     /**
      * Probability (0..1) that the text is a prompt-injection attempt, or null if the provider has no classifier.

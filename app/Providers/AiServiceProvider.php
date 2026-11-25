@@ -20,7 +20,7 @@ class AiServiceProvider extends ServiceProvider
             return match ($c['provider']) {
                 'gemini' => new GeminiClient($c['gemini']['key'], $c['gemini']['model'], $c['timeout']),
                 'none' => new NullClient(),
-                default => new OpenAiCompatibleClient($c['groq']['key'], $c['groq']['base_url'], $c['groq']['model'], $c['groq']['guard_model'], $c['timeout']),
+                default => new OpenAiCompatibleClient($c['groq']['key'], $c['groq']['base_url'], $c['groq']['model'], $c['groq']['guard_model'], $c['timeout'], $c['groq']['fast_model']),
             };
         });
 

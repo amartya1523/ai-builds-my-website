@@ -20,7 +20,7 @@ class NullClient implements AiClient
         return false;
     }
 
-    public function json(string $system, string $user): array
+    public function json(string $system, string $user, bool $fast = false): array
     {
         throw new AiUnavailableException('AI is turned off (AI_PROVIDER=none).');
     }

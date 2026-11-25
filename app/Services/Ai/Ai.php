@@ -25,7 +25,7 @@ class Ai
     }
 
     /** @throws AiUnavailableException */
-    public function json(string $purpose, string $system, string $user, ?int $siteId = null): array
+    public function json(string $purpose, string $system, string $user, ?int $siteId = null, bool $fast = false): array
     {
         $attempt = 0;
         $last = null;
@@ -33,7 +33,7 @@ class Ai
         while ($attempt <= $this->retries) {
             $started = microtime(true);
             try {
-                $data = $this->client->json($system, $user);
+                $data = $this->client->json($system, $user, $fast);
                 $this->log($siteId, $purpose, true, $started);
 
                 return $data;
@@ -50,7 +50,10 @@ class Ai
 
             $attempt++;
             if ($attempt <= $this->retries && ! app()->runningUnitTests()) {
-                usleep(400_000 * $attempt);
+                // On a rate limit wait as long as the provider asks (capped), otherwise a short backoff.
+                $last instanceof RateLimited
+                    ? sleep(min($last->retryAfter + 1, 30))
+                    : usleep(400_000 * $attempt);
             }
         }
 
