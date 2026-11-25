@@ -98,11 +98,64 @@ class LinkReader
         }
 
         $text = $this->previewText($x)."\n\n".$x['text'];
+
+        if ($kind === 'website') {
+            foreach ($this->subPages($x['links'], $final) as $pageUrl) {
+                $page = $this->fetchPage($pageUrl);
+                if (! $page) {
+                    continue;
+                }
+                $meta['pages'][] = $pageUrl;
+                $meta['phones'] = array_values(array_unique(array_merge($meta['phones'], $page['phones'])));
+                $meta['emails'] = array_values(array_unique(array_merge($meta['emails'], $page['emails'])));
+                $meta['social'] = $meta['social'] + $page['social'];
+                $meta['jsonld'] = array_slice(array_merge($meta['jsonld'], $page['jsonld']), 0, 8);
+                if ($page['hidden_text'] !== '') {
+                    $meta['hidden_text'] = trim($meta['hidden_text']."\n".$page['hidden_text']);
+                }
+                $text .= "\n\n--- Page: {$pageUrl}\n".mb_substr($page['text'], 0, 5000);
+            }
+        }
+
         foreach ($x['jsonld'] as $node) {
             $text .= "\n\nStructured data: ".json_encode($this->compactJsonLd($node), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
 
         return ['status' => 'ok', 'note' => null, 'text' => trim($text), 'meta' => $meta];
+    }
+
+    /** Pick up to 4 pages on the same site that usually hold facts (contact, about, menu, prices…). */
+    private function subPages(array $links, string $home): array
+    {
+        $pattern = '/contact|about|menu|service|price|pricing|tariff|location|visit|hours|our-story|treatments|products|reach/i';
+        $picked = [];
+        foreach ($links as $url => $text) {
+            if (rtrim($url, '/') === rtrim($home, '/') || preg_match('/login|register|account|cart|checkout|privacy|policy|terms|refund|wp-json|feed|\.(pdf|jpg|png|zip)$/i', $url)) {
+                continue;
+            }
+            if (preg_match($pattern, $url) || preg_match($pattern, (string) $text)) {
+                $picked[$url] = true;
+            }
+            if (count($picked) >= 4) {
+                break;
+            }
+        }
+
+        return array_keys($picked);
+    }
+
+    private function fetchPage(string $url): ?array
+    {
+        try {
+            $r = Http::withHeaders(['User-Agent' => config('aiwb.user_agent')])->timeout(config('aiwb.fetch_timeout'))->get($url);
+        } catch (Throwable) {
+            return null;
+        }
+        if (! $r->successful()) {
+            return null;
+        }
+
+        return $this->html->extract((string) $r->body(), $url);
     }
 
     /** /maps/place/Laxmi+Mishthan+Bhandar/@26.92,75.82 -> name + coordinates, readable even when the page is not. */

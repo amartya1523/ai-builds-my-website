@@ -18,7 +18,7 @@ class HtmlExtractor
     {
         $out = [
             'title' => null, 'description' => null, 'og' => [], 'jsonld' => [], 'text' => '',
-            'phones' => [], 'emails' => [], 'social' => [], 'hidden_text' => '',
+            'phones' => [], 'emails' => [], 'social' => [], 'hidden_text' => '', 'links' => [],
         ];
 
         if (trim($html) === '') {
@@ -65,6 +65,8 @@ class HtmlExtractor
                 $out['emails'][] = strtok(substr($href, 7), '?');
             } elseif ($label = $this->socialLabel($href)) {
                 $out['social'][$href] = $label;
+            } elseif ($baseUrl && ($abs = $this->absolute($href, $baseUrl))) {
+                $out['links'][$abs] = $this->clean($a->textContent);
             }
         }
 
@@ -89,6 +91,31 @@ class HtmlExtractor
         $out['emails'] = array_values(array_unique(array_filter($out['emails'])));
 
         return $out;
+    }
+
+    /** Resolve a link against the page URL; only same-site http(s) links are returned. */
+    public function absolute(string $href, string $base): ?string
+    {
+        $href = html_entity_decode(trim($href));
+        if ($href === '' || str_starts_with($href, '#') || preg_match('#^(javascript|data|whatsapp|sms):#i', $href)) {
+            return null;
+        }
+        $b = parse_url($base);
+        if (! isset($b['scheme'], $b['host'])) {
+            return null;
+        }
+        if (str_starts_with($href, '//')) {
+            $href = $b['scheme'].':'.$href;
+        } elseif (! preg_match('#^https?://#i', $href)) {
+            $dir = isset($b['path']) ? preg_replace('#/[^/]*$#', '/', $b['path']) : '/';
+            $href = $b['scheme'].'://'.$b['host'].(str_starts_with($href, '/') ? $href : $dir.$href);
+        }
+        $host = preg_replace('/^www\./', '', strtolower((string) parse_url($href, PHP_URL_HOST)));
+        if ($host !== preg_replace('/^www\./', '', strtolower($b['host']))) {
+            return null;
+        }
+
+        return strtok($href, '#');
     }
 
     public function socialLabel(string $url): ?string
